@@ -28,6 +28,7 @@
 - [iOS] bottom toolbar ([#41106](https://github.com/expo/expo/pull/41106) by [@Ubax](https://github.com/Ubax))
 - [iOS] rename displayInline and displayAsPalette in Link.Menu ([#41317](https://github.com/expo/expo/pull/41317) by [@Ubax](https://github.com/Ubax))
 - [iOS] add zoom transition support ([#41083](https://github.com/expo/expo/pull/41083) by [@Ubax](https://github.com/Ubax))
+- [iOS] prevent dismissal for zoom transition, when gestureEnabled is false ([#41356](https://github.com/expo/expo/pull/41356) by [@Ubax](https://github.com/Ubax))
 
 ### 🐛 Bug fixes
 
