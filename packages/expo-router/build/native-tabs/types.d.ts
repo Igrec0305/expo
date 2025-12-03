@@ -89,6 +89,10 @@ export interface NativeTabsProps extends PropsWithChildren {
      */
     badgeBackgroundColor?: ColorValue;
     /**
+     * When set to `true`, hides the tab bar.
+     */
+    hidden?: boolean;
+    /**
      * Specifies the minimize behavior for the tab bar.
      *
      * Available starting from iOS 26.
