@@ -35,9 +35,7 @@
   "jest": {
     "preset": "expo-module-scripts"
   },
-  "dependencies": {
-    "expo-image-loader": "~6.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "expo-module-scripts": "^5.0.7",
     "@testing-library/user-event": "^14.6.1"

@@ -72,7 +72,6 @@ function getExpoDependencyChunks({
             'expo-blur',
             'expo-crypto',
             'expo-image',
-            'expo-image-loader',
             'expo-image-manipulator',
             'expo-insights',
             'expo-linear-gradient',

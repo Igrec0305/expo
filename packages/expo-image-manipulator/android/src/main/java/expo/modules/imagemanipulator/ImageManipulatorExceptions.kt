@@ -7,7 +7,7 @@ internal class ImageInvalidCropException :
   CodedException("Invalid crop options has been passed. Please make sure the requested crop rectangle is inside source image")
 
 internal class ImageLoaderNotFoundException :
-  CodedException(message = "ImageLoader module not found, make sure 'expo-image-loader' is linked correctly")
+  CodedException(message = "ImageLoader module not found")
 
 internal class ImageLoadingFailedException(image: String, cause: CodedException) :
   DecoratedException(message = "Could not load the image: $image", cause)

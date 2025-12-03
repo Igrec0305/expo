@@ -224,9 +224,9 @@ public final class AppContext: NSObject, @unchecked Sendable {
   }
 
   /**
-   Provides access to the image loader from legacy module registry.
+   Provides access to the image loader.
    */
-  public var imageLoader: EXImageLoaderInterface? {
+  public var imageLoader: ImageLoader? {
     guard let bridge = reactBridge else {
       // TODO: Find a way to do this without a bridge
       log.warn("Unable to get the image loader because the bridge is not available.")
