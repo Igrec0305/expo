@@ -1,24 +1,162 @@
----
-title: Create a project
-description: Learn how to create a new Expo project.
-hideTOC: true
----
+-- Schema: تحويسة (tahwisa)
+-- Tables: users, destinations, pois, accommodations, flights_cache, events, exchange_rates, visitors, posts, reviews, emergency_contacts, itineraries, expenses, translations
 
-import { Terminal } from '~/ui/components/Snippet';
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS postgis; -- للمواقع الجغرافية
 
-System requirements:
+-- Users
+CREATE TABLE users (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email varchar(255) UNIQUE,
+  phone varchar(32),
+  name varchar(255),
+  preferred_language varchar(10) DEFAULT 'ar',
+  created_at timestamptz DEFAULT now(),
+  is_local_guide boolean DEFAULT FALSE
+);
 
-- [Node.js (LTS)](https://nodejs.org/en/).
-- macOS, Windows (Powershell and [WSL 2](https://expo.fyi/wsl)), and Linux are supported.
+-- Destinations
+CREATE TABLE destinations (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  slug varchar(255) UNIQUE,
+  name jsonb, -- { "en":"Cairo", "ar":"القاهرة" }
+  description jsonb,
+  country varchar(100),
+  center geography(Point,4326),
+  safety_score numeric, -- 0..1
+  avg_cost_per_day numeric,
+  tags text[],
+  created_at timestamptz DEFAULT now()
+);
 
-We recommend starting with the default project created by `create-expo-app`. The default project includes example code to help you get started.
+-- Points of Interest (POI)
+CREATE TABLE pois (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  destination_id uuid REFERENCES destinations(id) ON DELETE CASCADE,
+  name jsonb,
+  category varchar(100),
+  subcategory varchar(100),
+  location geography(Point,4326),
+  price_category varchar(10), -- cheap, mid, premium
+  opening_hours jsonb,
+  phone varchar(50),
+  avg_rating numeric DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
 
-To create a new project, run the following command:
+-- Accommodations (Hotels/Apartments)
+CREATE TABLE accommodations (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  destination_id uuid REFERENCES destinations(id),
+  provider varchar(255),
+  name jsonb,
+  type varchar(50), -- hotel, apartment
+  price_from numeric,
+  rating numeric,
+  amenities text[],
+  location geography(Point,4326),
+  external_id varchar(255),
+  last_checked timestamptz
+);
 
-<Terminal cmd={['$ npx create-expo-app@latest']} />
+-- Flights cache (simplified)
+CREATE TABLE flights_cache (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  origin varchar(10),
+  destination varchar(10),
+  depart_date date,
+  return_date date,
+  results jsonb,
+  fetched_at timestamptz DEFAULT now()
+);
 
-> You can choose a different template by adding the [`--template` option](/more/create-expo/#--template).
+-- Events
+CREATE TABLE events (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  destination_id uuid REFERENCES destinations(id),
+  title jsonb,
+  description jsonb,
+  start_at timestamptz,
+  end_at timestamptz,
+  category varchar(100),
+  location geography(Point,4326)
+);
 
-## Next step
+-- Exchange rates (latest)
+CREATE TABLE exchange_rates (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  base_currency varchar(8),
+  rates jsonb,
+  fetched_at timestamptz DEFAULT now()
+);
 
-You have a project. Now it's time to set up your development environment so that you can start developing.
+-- Visitors tracking (real-time / near real-time)
+CREATE TABLE visitors (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(id) NULL,
+  location geography(Point,4326),
+  destination_id uuid REFERENCES destinations(id),
+  created_at timestamptz DEFAULT now()
+);
+
+-- Social posts
+CREATE TABLE posts (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(id),
+  destination_id uuid REFERENCES destinations(id),
+  content text,
+  media jsonb, -- [{type:'image', url:'...'}]
+  privacy varchar(20) DEFAULT 'public',
+  created_at timestamptz DEFAULT now()
+);
+
+-- Reviews
+CREATE TABLE reviews (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(id),
+  poi_id uuid REFERENCES pois(id),
+  rating smallint CHECK(rating>=1 AND rating<=5),
+  comment text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Emergency contacts
+CREATE TABLE emergency_contacts (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  destination_id uuid REFERENCES destinations(id),
+  type varchar(50), -- hospital, police, embassy, helpline
+  name jsonb,
+  phone varchar(50),
+  notes jsonb
+);
+
+-- Itineraries
+CREATE TABLE itineraries (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(id),
+  title varchar(255),
+  items jsonb, -- ordered list of day -> activities
+  total_cost numeric,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Simple translations store (for offline)
+CREATE TABLE translations (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  key text,
+  lang varchar(10),
+  value text
+);
+
+-- Mock data (نماذج)
+INSERT INTO users (email, phone, name, preferred_language) VALUES
+('ali@example.com','+213600000001','علي','ar'),
+('sara@example.com','+971500000002','Sara','en');
+
+INSERT INTO destinations (slug,name,description,country,center,safety_score,avg_cost_per_day,tags) VALUES
+('cairo', '{"en":"Cairo","ar":"القاهرة"}','{"en":"Capital of Egypt","ar":"عاصمة مصر"}','Egypt', ST_GeogFromText('SRID=4326;POINT(31.2357 30.0444)'),0.6,45, ARRAY['history','culture']);
+
+INSERT INTO pois (destination_id,name,category,location,price_category,opening_hours) SELECT id, '{"en":"Egyptian Museum","ar":"المتحف المصري"}','museum', ST_GeogFromText('SRID=4326;POINT(31.2336 30.0478)'), 'mid','{"mon-sun":"09:00-17:00"}' FROM destinations WHERE slug='cairo';
+
+INSERT INTO exchange_rates (base_currency,rates) VALUES ('USD','{"EUR":0.92,"DZD":140.0,"EGP":30.9}');
+
